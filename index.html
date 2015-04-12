@@ -1,21 +1,29 @@
 <!DOCTYPE html>
 <html>
       <head>
-            <title>Potato Clicker</title>
-            <script src="p1handle.js" type="text/javascript"></script>
-            <script src="p2handle.js" type="text/javascript"></script>
-            <script src="porting.js" type="text/javascript"></script>
-            <script src="hellMini.js" type="text/javascript"></script>
+            <title>MOBA TEST - prealpha 1</title>
+            <script src="canvas.js" type="text/javascript"></script>
             <script type="text/javascript">
-                function print(s) {
+                function printf(s) {
                     document.getElementById("print").innerHTML += s;
                 }
                 function clearOut() {
                     document.getElementById("print").innerHTML = "";
                 }
+                (function () {
+                    window.onload = function () {
+                        var c = new cv("test", 400, 400);
+                        c.draw(new img("C:/Users/Clay/Downloads/fire-vector.png", 0, 0, 100, 100));
+                        c.draw(new img("C:/Users/Clay/Downloads/fire-vector.png", 100, 0, 100, 100));
+                        c.draw(new img("C:/Users/Clay/Downloads/fire-vector.png", 0, 100, 100, 100));
+                        c.draw(new rect(100, 100, 100, 100));
+                        c.draw(new circ(250, 50, 50));
+                        c.draw(new circ(50, 250, 50));
+                    };
+                })();
             </script>
       </head>
       <body>
-            <div class="print"></div>
+            <div id="print"></div>
       </body>
 </html>

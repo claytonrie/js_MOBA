@@ -10,7 +10,7 @@
  * @returns {cv}
  */
 cv = function (name, height, width) {
-    print('<canvas id="' + name + '" height="' + height + '" width="' + width +
+    printf('<canvas id="' + name + '" height="' + height + '" width="' + width +
             '">Update your web browser to support canvas elements.</canvas>');
     this.id = name;
     this.elem = document.getElementById(this.id);
@@ -72,7 +72,7 @@ rect = function (x, y, height, width, isFilled) {
 rect.prototype = {
     pos: [0, 0],
     h: 10, w: 10,
-    clr: "#000",
+    clr: "#00000",
     fill: true,
     /**
      * Draws the rectangle with the given context.
@@ -80,7 +80,7 @@ rect.prototype = {
      * @returns {rect}
      */
     draw: function (ctx) {
-        if(fill) {
+        if(this.fill) {
             ctx.fillStyle = this.clr;
             ctx.fillRect(this.pos[0], this.pos[1], this.w, this.h);
         } else {
@@ -134,6 +134,15 @@ rect.prototype = {
     setY: function (y) {
         this.pos = [this.pos[0], y];
         return this;
+    },
+    /**
+     * Sets a new color.
+     * @param {String} newColor
+     * @returns {rect}
+     */
+    setColor: function (newColor) {
+        this.clr = newColor;
+        return this;
     }
 };
 
@@ -165,7 +174,7 @@ circ.prototype = {
         ctx.beginPath();
         ctx.fillStyle = ctx.strokeStyle = this.clr;
         ctx.arc(this.pos[0], this.pos[1], this.r, 0, 2 * Math.PI);
-        if(fill) {
+        if(this.fill) {
             ctx.fill();
         } else {
             ctx.stroke();
@@ -208,9 +217,19 @@ circ.prototype = {
     setY: function (y) {
         this.pos = [this.pos[0], y];
         return this;
+    },
+    /**
+     * Sets a new color.
+     * @param {String} newColor
+     * @returns {circ}
+     */
+    setColor: function (newColor) {
+        this.clr = newColor;
+        return this;
     }
 };
 
+imgList = [];
 /**
  * An image object.
  * @param {URL} source
@@ -224,37 +243,73 @@ img = function (source, x, y, height, width) {
     this.pos = [x, y];
     this.h = height;
     this.w = width;
-    this.img = new Image();
-    this.img.onload = function () {
-        this.load = true;
-        if(this.req) {
-            this.draw();
+    // Look through all the images to see if the image was already loaded
+    for(var i in imgList) {
+        if(imgList[i].img.source === source) {
+            this.ind = i; // Use that image
+            if(imgList[i].req !== null) { // If the image hasn't loaded
+                // Request a null canvas drawing; 
+                // This enable this object when the image loads
+                imgList[i].req.push({
+                    ctx: null, 
+                    ref: this
+                });
+            } else { // If the image has loaded
+                // Enable this object
+                this.load = true;
+            }
+            return this;
         }
+    }
+    // Load a new image onto the list
+    var i = this.ind = imgList.length;
+    imgList.push({
+        img: new Image(), 
+        req: [{
+            ctx: null, 
+            ref: this
+        }]
+    });
+    // When it loads
+    imgList[this.ind].img.onload = function () {
+        // Tell that it's loaded
+        for(var j in imgList[i].req) {
+            // Set load to true in all image objects using this image
+            imgList[i].req[j].ref.loaded()
+                    .draw(imgList[i].req[j].ctx);
+            // Draw on the requested canvas
+        }
+        imgList[i].req = null;
     };
-    this.img.src = source;
+    imgList[this.ind].img.src = source;
     return this;
 };
 img.prototype = {
     pos: [0, 0],
     h: 10, w: 10,
-    // Image object
-    img: null,
+    // Index of image
+    ind: null,
     // If the image is loaded yet
-    load: false, 
-    // If the image was requested before it was loaded
-    req: false,
+    load: false,
+    loaded: function () {
+        this.load = true;
+        return this;
+    },
     /**
      * Draws the rectangle with the given context.
      * @param {cv.ctx} ctx
      * @returns {img}
      */
     draw: function (ctx) {
-        if(this.load) { // the image is loaded
-            ctx.drawImage(this.img, this.pos[0], this.pos[1], this.w, this.h);
-        } else { // Not loaded yet
-            console.log("Image not yet loaded.");
-            // Request the image to be drawn onload
-            this.req = true;
+        if(ctx !== null) {
+            if(this.load) { // the image is loaded
+                ctx.drawImage(imgList[this.ind].img, this.pos[0], 
+                    this.pos[1], this.w, this.h);
+            } else { // Not loaded yet
+               console.log("Image not yet loaded.");
+                // Request the image to be drawn onload
+                imgList[this.ind].req.push({ctx: ctx, ref: this});
+            }
         }
         return this;
     },
